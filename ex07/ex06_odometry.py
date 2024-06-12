@@ -42,7 +42,7 @@ def simulate_robot(num_runs, velocity, time_step, total_time, sigma_right, sigma
                 odom_y += odo_delta_y
 
                 if scenario == 1:  # Perfect odometry correction
-                    x, y = odom_x, odom_y
+                    odom_x, odom_y  = x, y
                 elif scenario == 2:  # Noisy odometry correction
                     correction_factor = 0.1
                     x += correction_factor * (odom_x - prev_odo_x)
