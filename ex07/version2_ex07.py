@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Constants
 VELOCITY = 1.0
 TIME_STEP = 0.1
 TOTAL_TIME = 10.0
@@ -14,7 +15,7 @@ B = 1.0
 def kinematic_model(vr, vl, theta, time_step):
     delta_x = 0.5 * (vr + vl) * np.cos(theta) * time_step
     delta_y = 0.5 * (vr + vl) * np.sin(theta) * time_step
-    delta_theta = (1/B) * (vr - vl) * time_step
+    delta_theta = (1 / B) * (vr - vl) * time_step
     return delta_x, delta_y, delta_theta
 
 def odometry(vr, vl, theta, time_step):
@@ -24,78 +25,13 @@ def odometry(vr, vl, theta, time_step):
 
 def simulate_robot(num_runs, velocity, time_step, total_time, sigma_right, sigma_left, sigma_o_right, sigma_o_left):
     results = []
-
-    # Task a) and b) - Straight line motion without velocity errors (a) and with (b)
-    positions = np.zeros((num_runs, 2))
-    odometries = np.zeros((num_runs, 2))
-    
-    for error in [False, True]:
-        for i in range(num_runs):
-            x, y, theta = 0, 0, 0
-            odom_x, odom_y = 0, 0
-
-            for t in np.arange(0, total_time, time_step):
-
-                if error: #b.1
-                    noisy_vr = velocity + np.random.normal(0, sigma_right)
-                    noisy_vl = velocity + np.random.normal(0, sigma_left)
-                else: #a
-                    noisy_vr = velocity 
-                    noisy_vl = velocity 
-
-                delta_x, delta_y, delta_theta = kinematic_model(noisy_vr, noisy_vl, theta, time_step)
-                x += delta_x
-                y += delta_y
-                theta += delta_theta
-
-                odom_vr = velocity + np.random.normal(0, sigma_o_right)
-                odom_vl = velocity + np.random.normal(0, sigma_o_left)
-                odo_dx, odo_dy = odometry(odom_vr, odom_vl, theta, time_step)
-                odom_x += odo_dx
-                odom_y += odo_dy
-
-            positions[i] = [x, y]
-            odometries[i] = [odom_x, odom_y]
-
-        results.append((positions, odometries))
-
-    # Task b) - Circular motion with and without velocity errors
-    positions = np.zeros((num_runs, 2))
-    odometries = np.zeros((num_runs, 2))
-
-    for i in range(num_runs):
-        x, y, theta = 0, 0, 0
-        odom_x, odom_y= 0, 0
-
-        for t in np.arange(0, total_time, time_step):
-            vr = velocity
-            vl = velocity * (1 - B / RADIUS)
-            #random velocity noice
-            noisy_vr = vr + np.random.normal(0, sigma_right)
-            noisy_vl = vl + np.random.normal(0, sigma_left)
-            #kinematic_model with velocity noise
-            delta_x, delta_y, delta_theta = kinematic_model(noisy_vr, noisy_vl, theta, time_step)
-            x += delta_x
-            y += delta_y
-            theta += delta_theta
-            #without velocity noise
-            odo_dx, odo_dy = odometry(vr, vl, theta, time_step)
-            odom_x += odo_dx
-            odom_y += odo_dy
-
-        positions[i] = [x, y]
-        odometries[i] = [odom_x, odom_y]
-
-    results.append((positions, odometries))
-
-    #Task c) Circular motion with velocities errors and odometry errors
-    # i. drive without taking odometry into consideration
-    # ii. make correlations based on the perfect odometry estimation
-    # iii. make correlations based on the noisy odometry estimation 
     cases = [
-        {'name': 'no_odom', 'odom_noise': False, 'odom_error': False},
-        {'name': 'perfect_odom', 'odom_noise': False, 'odom_error': False},
-        {'name': 'noisy_odom', 'odom_noise': True, 'odom_error': True}
+        {'name': 'no_errors', 'circular_path': False, 'v_noise': False, 'odom_noise': False},
+        {'name': 'v_error_linear', 'circular_path': False, 'v_noise': True, 'odom_noise': False},
+        {'name': 'v_error_circular', 'circular_path': True, 'v_noise': True, 'odom_noise': False},
+        {'name': 'v_error_no_odom', 'circular_path': True, 'v_noise': True, 'odom_noise': False},
+        {'name': 'v_error_perfect_odom', 'circular_path': True, 'v_noise': True, 'odom_noise': False},
+        {'name': 'v_error_noisy_odom', 'circular_path': True, 'v_noise': True, 'odom_noise': True},
     ]
 
     for case in cases:
@@ -107,22 +43,18 @@ def simulate_robot(num_runs, velocity, time_step, total_time, sigma_right, sigma
 
             for t in np.arange(0, total_time, time_step):
                 vr = velocity
-                vl = velocity * (1 - B / RADIUS)
+                vl = velocity * (1 - B / RADIUS) if case['circular_path'] else velocity
 
-                noisy_vr = vr + np.random.normal(0, sigma_right)
-                noisy_vl = vl + np.random.normal(0, sigma_left)
+                noisy_vr = vr + np.random.normal(0, sigma_right) if case['v_noise'] else vr
+                noisy_vl = vl + np.random.normal(0, sigma_left) if case['v_noise'] else vl
 
                 delta_x, delta_y, delta_theta = kinematic_model(noisy_vr, noisy_vl, theta, time_step)
                 x += delta_x
                 y += delta_y
                 theta += delta_theta
 
-                if case['odom_noise']:
-                    odom_vr = vr + np.random.normal(0, sigma_o_right)
-                    odom_vl = vl + np.random.normal(0, sigma_o_left)
-                else:
-                    odom_vr = vr
-                    odom_vl = vl
+                odom_vr = vr + np.random.normal(0, sigma_o_right) if case['odom_noise'] else vr
+                odom_vl = vl + np.random.normal(0, sigma_o_left) if case['odom_noise'] else vl
 
                 odo_dx, odo_dy = odometry(odom_vr, odom_vl, theta, time_step)
                 odom_x += odo_dx
@@ -135,90 +67,21 @@ def simulate_robot(num_runs, velocity, time_step, total_time, sigma_right, sigma
 
     return results
 
-def plot_results(results):
-    # First 6 histograms
-    fig1, axs1 = plt.subplots(3, 2, figsize=(18, 18))
+def plot_results(results, case_names):
+    num_cases = len(results)
+    fig, axs = plt.subplots(num_cases, 2, figsize=(12, 3 * num_cases))
 
-    axs1[0, 0].hist2d(results[0][0][:, 0], results[0][0][:, 1], bins=50)
-    axs1[0, 0].set_title('Actual Position (Straight Line)')
-    axs1[0, 0].set_xlabel('X Position')
-    axs1[0, 0].set_ylabel('Y Position')
+    for i, result in enumerate(results):
+        axs[i, 0].hist2d(result[0][:, 0], result[0][:, 1], bins=50, cmap='viridis')
+        axs[i, 0].set_title(f'Actual Position - {case_names[i]}')
 
-    axs1[0, 1].hist2d(results[0][1][:, 0], results[0][1][:, 1], bins=50)
-    axs1[0, 1].set_title('Estimated Position (Straight Line)')
-    axs1[0, 1].set_xlabel('X Position')
-    axs1[0, 1].set_ylabel('Y Position')
+        axs[i, 1].hist2d(result[1][:, 0], result[1][:, 1], bins=50,  cmap='viridis')
+        axs[i, 1].set_title(f'Estimated Position - {case_names[i]}')
 
-    axs1[1, 0].hist2d(results[1][0][:, 0], results[1][0][:, 1], bins=50)
-    axs1[1, 0].set_title('Actual Position (Straight Line with Velocity Errors)')
-    axs1[1, 0].set_xlabel('X Position')
-    axs1[1, 0].set_ylabel('Y Position')
-
-    axs1[1, 1].hist2d(results[1][1][:, 0], results[1][1][:, 1], bins=50)
-    axs1[1, 1].set_title('Estimated Position (Straight Line with Velocity Errors)')
-    axs1[1, 1].set_xlabel('X Position')
-    axs1[1, 1].set_ylabel('Y Position')
-
-    axs1[2, 0].hist2d(results[2][0][:, 0], results[2][0][:, 1], bins=50)
-    axs1[2, 0].set_title('Actual Position (Circular Motion with Velocity Errors)')
-    axs1[2, 0].set_xlabel('X Position')
-    axs1[2, 0].set_ylabel('Y Position')
-
-    axs1[2, 1].hist2d(results[2][1][:, 0], results[2][1][:, 1], bins=50)
-    axs1[2, 1].set_title('Estimated Position (Circular Motion with Velocity Errors)')
-    axs1[2, 1].set_xlabel('X Position')
-    axs1[2, 1].set_ylabel('Y Position')
-
-    axs1[0, 0].set_ylabel('Y Position')
-    axs1[1, 0].set_ylabel('Y Position')
-    axs1[2, 0].set_ylabel('Y Position')
-
-    plt1 = plt.gcf()
-    plt.subplots_adjust(hspace=0.6)
-    plt.savefig('ex07/ex07_a&b.png')
-    plt.show()
-
-    # Last 6 histograms
-    fig2, axs2 = plt.subplots(3, 2, figsize=(18, 18))
-
-    axs2[0, 0].hist2d(results[3][0][:, 0], results[3][0][:, 1], bins=50)
-    axs2[0, 0].set_title('Actual Position (Circular Motion with Velocity Errors, No Odometry)')
-    axs2[0, 0].set_xlabel('X Position')
-    axs2[0, 0].set_ylabel('Y Position')
-
-    axs2[0, 1].hist2d(results[3][1][:, 0], results[3][1][:, 1], bins=50)
-    axs2[0, 1].set_title('Estimated Position (Circular Motion with Velocity Errors, Perfect Odometry)')
-    axs2[0, 1].set_xlabel('X Position')
-    axs2[0, 1].set_ylabel('Y Position')
-
-    axs2[1, 0].hist2d(results[4][0][:, 0], results[4][0][:, 1], bins=50)
-    axs2[1, 0].set_title('Actual Position (Circular Motion with Velocity Errors, Perfect Odometry)')
-    axs2[1, 0].set_xlabel('X Position')
-    axs2[1, 0].set_ylabel('Y Position')
-
-    axs2[1, 1].hist2d(results[4][1][:, 0], results[4][1][:, 1], bins=50)
-    axs2[1, 1].set_title('Estimated Position (Circular Motion with Velocity Errors, Perfect Odometry)')
-    axs2[1, 1].set_xlabel('X Position')
-    axs2[1, 1].set_ylabel('Y Position')
-
-    axs2[2, 0].hist2d(results[5][0][:, 0], results[5][0][:, 1], bins=50)
-    axs2[2, 0].set_title('Actual Position (Circular Motion with Velocity Errors, Noisy Odometry)')
-    axs2[2, 0].set_xlabel('X Position')
-    axs2[2, 0].set_ylabel('Y Position')
-
-    axs2[2, 1].hist2d(results[5][1][:, 0], results[5][1][:, 1], bins=50)
-    axs2[2, 1].set_title('Estimated Position (Circular Motion with Velocity Errors, Noisy Odometry)')
-    axs2[2, 1].set_xlabel('X Position')
-    axs2[2, 1].set_ylabel('Y Position')
-
-    axs2[0, 0].set_ylabel('Y Position')
-    axs2[1, 0].set_ylabel('Y Position')
-    axs2[2, 0].set_ylabel('Y Position')
-
-    plt2 = plt.gcf()
-    plt.subplots_adjust(hspace=0.6, wspace=0.8)
+    plt.tight_layout(pad=6.0)
     plt.show()
 
 num_runs = 1000
 results = simulate_robot(num_runs, VELOCITY, TIME_STEP, TOTAL_TIME, SIGMA_RIGHT, SIGMA_LEFT, SIGMA_O_RIGHT, SIGMA_O_LEFT)
-plot_results(results)
+case_names = ['no_errors', 'v_error_linear', 'v_error_circular', 'v_error_no_odom', 'v_error_perfect_odom', 'v_error_noisy_odom']
+plot_results(results, case_names)
