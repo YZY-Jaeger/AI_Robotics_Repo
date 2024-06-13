@@ -175,6 +175,7 @@ def plot_results(results):
 
     plt1 = plt.gcf()
     plt.subplots_adjust(hspace=0.6)
+    plt.savefig('ex07/ex07_a&b.png')
     plt.show()
 
     # Last 6 histograms
