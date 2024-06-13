@@ -26,12 +26,12 @@ def odometry(vr, vl, theta, time_step):
 def simulate_robot(num_runs, velocity, time_step, total_time, sigma_right, sigma_left, sigma_o_right, sigma_o_left):
     results = []
     cases = [
-        {'name': 'no_errors', 'circular_path': False, 'v_noise': False, 'odom_noise': False},
-        {'name': 'v_error_linear', 'circular_path': False, 'v_noise': True, 'odom_noise': False},
-        {'name': 'v_error_circular', 'circular_path': True, 'v_noise': True, 'odom_noise': False},
-        {'name': 'v_error_no_odom', 'circular_path': True, 'v_noise': True, 'odom_noise': False},
-        {'name': 'v_error_perfect_odom', 'circular_path': True, 'v_noise': True, 'odom_noise': False, 'correction': True},
-        {'name': 'v_error_noisy_odom', 'circular_path': True, 'v_noise': True, 'odom_noise': True, 'correction': True},
+        {'name': 'no_errors', 'circular_path': False, 'v_noise': False, 'odom_noise': False, 'correction': False},
+        {'name': 'v_error_linear', 'circular_path': False, 'v_noise': True, 'odom_noise': False, 'correction': False},
+        {'name': 'v_error_circular', 'circular_path': True, 'v_noise': True, 'odom_noise': False, 'correction': False},
+        {'name': 'v_error_no_odom', 'circular_path': True, 'v_noise': True, 'odom_noise': False, 'correction': False},
+        {'name': 'v_error_perfect_odom', 'circular_path': True, 'v_noise': True, 'odom_noise': False, 'correction': True, 'use_noisy_odom': False},
+        {'name': 'v_error_noisy_odom', 'circular_path': True, 'v_noise': True, 'odom_noise': True, 'correction': True, 'use_noisy_odom': True},
     ]
 
     for case in cases:
@@ -59,13 +59,19 @@ def simulate_robot(num_runs, velocity, time_step, total_time, sigma_right, sigma
                 odo_dx, odo_dy = odometry(odom_vr, odom_vl, theta, time_step)
                 odom_x += odo_dx
                 odom_y += odo_dy
-                if case.get('correction', True):
-                    if case.get('odom_noise', True):
-                        vr = odom_vr
-                        vl = odom_vl
+
+                if case['correction']:
+                    if case['odom_noise']:
+                        correction_vr = odom_vr
+                        correction_vl = odom_vl
                     else:
-                        vr = velocity
-                        vl = velocity * (1 - B / RADIUS) if case['circular_path'] else velocity
+                        correction_vr = vr
+                        correction_vl = vl * (1 - B / RADIUS) if case['circular_path'] else vl
+
+                    correction_dx, correction_dy, correction_dtheta = kinematic_model(correction_vr, correction_vl, theta, time_step)
+                    x += correction_dx - delta_x
+                    y += correction_dy - delta_y
+                    theta += correction_dtheta - delta_theta
 
             positions[i] = [x, y]
             odometries[i] = [odom_x, odom_y]
@@ -81,11 +87,15 @@ def plot_results(results, case_names):
     for i, result in enumerate(results):
         axs[i, 0].hist2d(result[0][:, 0], result[0][:, 1], bins=50, cmap='viridis')
         axs[i, 0].set_title(f'Actual Position - {case_names[i]}')
+        axs[i, 0].set_xlabel('X Position')
+        axs[i, 0].set_ylabel('Y Position')
 
-        axs[i, 1].hist2d(result[1][:, 0], result[1][:, 1], bins=50,  cmap='viridis')
+        axs[i, 1].hist2d(result[1][:, 0], result[1][:, 1], bins=50, cmap='viridis')
         axs[i, 1].set_title(f'Estimated Position - {case_names[i]}')
+        axs[i, 1].set_xlabel('X Position')
+        axs[i, 1].set_ylabel('Y Position')
 
-    plt.tight_layout(pad=6.0)
+    plt.tight_layout(pad=8.0)
     plt.show()
 
 num_runs = 1000
