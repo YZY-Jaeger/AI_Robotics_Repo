@@ -92,4 +92,5 @@ for i in range(3):
     plt.ylabel('Y Position')
 
 plt.tight_layout()
+plt.savefig("ex07/c.png")
 plt.show()

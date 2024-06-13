@@ -166,6 +166,7 @@ def plot_results(results):
     axs[2, 1].set_ylabel('Y Position')
 
     plt.subplots_adjust(hspace=0.6)
+    plt.savefig('ex07/ex07_a&b.png')
     plt.show()
 
 num_runs = 1000
