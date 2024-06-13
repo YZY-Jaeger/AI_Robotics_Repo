@@ -30,8 +30,8 @@ def simulate_robot(num_runs, velocity, time_step, total_time, sigma_right, sigma
         {'name': 'v_error_linear', 'circular_path': False, 'v_noise': True, 'odom_noise': False},
         {'name': 'v_error_circular', 'circular_path': True, 'v_noise': True, 'odom_noise': False},
         {'name': 'v_error_no_odom', 'circular_path': True, 'v_noise': True, 'odom_noise': False},
-        {'name': 'v_error_perfect_odom', 'circular_path': True, 'v_noise': True, 'odom_noise': False},
-        {'name': 'v_error_noisy_odom', 'circular_path': True, 'v_noise': True, 'odom_noise': True},
+        {'name': 'v_error_perfect_odom', 'circular_path': True, 'v_noise': True, 'odom_noise': False, 'correction': True},
+        {'name': 'v_error_noisy_odom', 'circular_path': True, 'v_noise': True, 'odom_noise': True, 'correction': True},
     ]
 
     for case in cases:
@@ -59,6 +59,13 @@ def simulate_robot(num_runs, velocity, time_step, total_time, sigma_right, sigma
                 odo_dx, odo_dy = odometry(odom_vr, odom_vl, theta, time_step)
                 odom_x += odo_dx
                 odom_y += odo_dy
+                if case.get('correction', True):
+                    if case.get('odom_noise', True):
+                        vr = odom_vr
+                        vl = odom_vl
+                    else:
+                        vr = velocity
+                        vl = velocity * (1 - B / RADIUS) if case['circular_path'] else velocity
 
             positions[i] = [x, y]
             odometries[i] = [odom_x, odom_y]
