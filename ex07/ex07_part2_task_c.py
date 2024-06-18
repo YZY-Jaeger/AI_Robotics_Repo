@@ -19,11 +19,11 @@ def simulate_robot(num_runs, velocity, time_step, total_time, sigma_right, sigma
                 vr = velocity  # constant right velocity
                 vl = velocity * (1 - b / radius)  # reduced left velocity for turning
 
-                # Add movement noise
+                #Add movement noise
                 noisy_vr = vr + np.random.normal(0, sigma_right)
                 noisy_vl = vl + np.random.normal(0, sigma_left)
 
-                # Kinematic model for actual movement
+                #Kinematic model for actual movement
                 delta_x = 0.5 * (noisy_vr + noisy_vl) * np.cos(theta) * time_step
                 delta_y = 0.5 * (noisy_vr + noisy_vl) * np.sin(theta) * time_step
                 delta_theta = (1/b) * (noisy_vr - noisy_vl) * time_step
@@ -32,7 +32,7 @@ def simulate_robot(num_runs, velocity, time_step, total_time, sigma_right, sigma
                 y += delta_y
                 theta += delta_theta
 
-                # Odometry with noise
+                #Odometry with noise
                 odom_vr = vr + np.random.normal(0, sigma_o_right)
                 odom_vl = vl + np.random.normal(0, sigma_o_left)
                 odo_delta_x = 0.5 * (odom_vr + odom_vl)  * np.cos(theta) * time_step
@@ -56,20 +56,20 @@ def simulate_robot(num_runs, velocity, time_step, total_time, sigma_right, sigma
 
     return results
 
-# Simulation parameters
+#Simulation parameters
 num_runs = 100
-velocity = 1.0  # constant velocity
+velocity = 1.0  #constant velocity
 time_step = 0.1
-total_time = 10.0  # simulate for 10 seconds
-sigma_right = 0.1  # Movement noise right wheel
-sigma_left = 0.1  # Movement noise left wheel
-sigma_o_right = 0.2  # Odometry noise right wheel
-sigma_o_left = 0.2  # Odometry noise left wheel
+total_time = 10.0  #simulate for 10 seconds
+sigma_right = 0.1  #Movement noise right wheel
+sigma_left = 0.1  #Movement noise left wheel
+sigma_o_right = 0.2  #Odometry noise right wheel
+sigma_o_left = 0.2  #Odometry noise left wheel
 
-# Run simulation
+#Run simulation
 results = simulate_robot(num_runs, velocity, time_step, total_time, sigma_right, sigma_left, sigma_o_right, sigma_o_left)
 
-# Plotting results
+#Plotting results
 titles = ['No Odometry Correction', 'Perfect Odometry Correction', 'Noisy Odometry Correction']
 plt.figure(figsize=(18, 12))
 
@@ -92,5 +92,5 @@ for i in range(3):
     plt.ylabel('Y Position')
 
 plt.tight_layout()
-plt.savefig("ex07/c.png")
+plt.savefig("ex07/ex07_c.png")
 plt.show()
