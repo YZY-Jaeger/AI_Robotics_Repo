@@ -79,6 +79,7 @@ def main():
     plt.title('Line map from LiDAR data using Split-and-Merge algorithm')
     plt.gca().invert_yaxis()  # This line flips the y-axis
     plt.gca().invert_xaxis()  # This line flips the x-axis
+    plt.savefig('ex08/ex08_world_model.png')
     plt.show()
 
 # Run the main process
