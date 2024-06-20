@@ -12,7 +12,7 @@ def extract_lidar_data(bag_path):
         connections = [x for x in reader.connections if x.topic == '/scan']
         for connection, timestamp, rawdata in reader.messages(connections=connections):
             msg = typestore.deserialize_cdr(rawdata, connection.msgtype)
-            #get the data from the LIDAR: 
+            #get the data from the LiDAR: 
             # ranges: A list or array of distance measurements.
             #angle_min: The starting angle of the LiDAR scan.
             #angle_max: The ending angle of the LiDAR scan.
@@ -55,9 +55,9 @@ def split_and_merge_algorithm(points, threshold):
     else:
         #else we split the point set by the max_distance point (p')
         #and do a recursion for both subsets
-        left_segments = split_and_merge_algorithm(points[:max_index+1], threshold)
-        right_segments = split_and_merge_algorithm(points[max_index:], threshold)
-        return left_segments + right_segments
+        left_points = split_and_merge_algorithm(points[:max_index+1], threshold)
+        right_points = split_and_merge_algorithm(points[max_index:], threshold)
+        return left_points + right_points
 
 def main():
     ranges, angle_min, angle_max, angle_increment = extract_lidar_data('ex08')
@@ -66,13 +66,17 @@ def main():
     threshold = 0.5 
     segments = split_and_merge_algorithm(cartesian_points, threshold)
 
+    plt.figure(figsize=(8, 6))
+    plt.scatter(cartesian_points[:, 0], cartesian_points[:, 1], c='black', marker='o', s=15, label='LiDAR Points')
+    plt.legend()
+
     for segment in segments:
         segment = np.array(segment)
         plt.plot(segment[:, 0], segment[:, 1])
 
     plt.xlabel('X')
     plt.ylabel('Y')
-    plt.title('Line map masterpiece')
+    plt.title('Line map from LiDAR data using Split-and-Merge algorithm')
     plt.show()
 
 # Run the main process
