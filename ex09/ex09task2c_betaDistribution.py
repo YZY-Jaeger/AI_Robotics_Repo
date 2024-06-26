@@ -29,9 +29,12 @@ class Robot:
         perceived_color = self.platform[self.position]
         if random.random() <= self.noise_prob:
             perceived_color = 'white' if perceived_color == 'black' else 'black'
+
+        if perceived_color == 'white':
+            self.beta[self.position]['white'] += 1
+        else:
+            self.alpha[self.position]['black'] += 1
         
-        self.alpha[self.position][perceived_color] += 1
-        self.beta[self.position][perceived_color] += 1
         self.report_position()
 
     def report_position(self):
@@ -129,25 +132,35 @@ robot = Robot(platform)
 print("Cautious Robot Simulation - No Noise")
 robot.simulate(20, strategy='cautious', noise_prob=0)
 
+print("\n------------------------------------")
+
 
 print("\nCautious Robot Simulation - 10% Noise")
 robot.simulate(20, strategy='cautious', noise_prob=0.1)
+
+print("\n------------------------------------")
 
 
 print("\nCautious Robot Simulation - 40% Noise")
 robot.simulate(20, strategy='cautious', noise_prob=0.4)
 
+print("\n------------------------------------")
+
 
 print("\nAdventurous Robot Simulation - No Noise")
 robot.simulate(20, strategy='adventurous', noise_prob=0)
+
+print("\n------------------------------------")
 
 
 print("\nAdventurous Robot Simulation - 10% Noise")
 robot.simulate(20, strategy='adventurous', noise_prob=0.1)
 
+print("\n------------------------------------")
 
 
 print("\nAdventurous Robot Simulation - 40% Noise")
 robot.simulate(20, strategy='adventurous', noise_prob=0.4)
 
+print("\n------------------------------------")
 
