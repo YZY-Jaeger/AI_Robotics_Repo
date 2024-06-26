@@ -48,6 +48,7 @@ class Robot:
             return random.choice(['left', 'right'])
 
     def simulate(self, steps):
+        error = 0
         for _ in range(steps):
             action = self.choose_action()
             next_position = self.position - 1 if action == 'left' else self.position + 1
@@ -57,13 +58,17 @@ class Robot:
                 self.move_left()
             else:
                 self.move_right()
-
+            if predicted_color != self.platform[self.position]:
+                    print("The prediction was incorrect.")
+                    error += 1
+        print(f"\nerror: {error}  step: {steps}")
+        print(f"Total error rate: {error / steps}")
 # Test the Robot class with a platform of more than two tiles
-platform = ['white', 'black', 'white']
+platform = ['white', 'black', 'white','white']
 robot = Robot(platform)
 
 robot.simulate(20)
-
+print("\n------------------------------------")
 print("\nFinal histograms:")
 for position in range(len(platform)):
     robot.print_histogram(position)
