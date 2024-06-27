@@ -6,12 +6,11 @@ import matplotlib.pyplot as plt
 class Robot:
     def __init__(self, platform):
         self.platform = platform
-        self.position = 0  # Start on the left side of the platform
+        self.position = 0 
         self.histograms = defaultdict(lambda: {'white': 1, 'black': 1})
         self.read_color = "default"
         self.positions = []
         self.errors = []
-
         
     def move_left(self,noise=0.1):
         randnum = random.random()
@@ -49,23 +48,12 @@ class Robot:
         print(f"The robot is on the {self.platform[self.position]} tile at position {self.position}.")
         self.positions.append(self.position)
         self.print_histogram(self.position)
-        self.print_platform()
 
     def print_histogram(self, position):
         histogram = self.histograms[position]
         print(f"Histogram for position {position}:")
         for color, count in histogram.items():
             print(f"  {color}: {count}")
-
-    def print_platform(self):
-        position_representation = [' ']*len(self.platform)
-        position_representation[self.position] = 'ROB'
-        
-        platform_representation = ' | '.join([f' {p} ' for p in self.platform])
-        robot_representation = ' | '.join([f'{r:^3}' for r in position_representation])
-        
-        print(f"|{robot_representation}|")
-        print(f"|{platform_representation}|")
 
     def predict_color(self, position):
 
@@ -153,7 +141,6 @@ class Robot:
         print(f"Total error rate: {error / steps}")
         return error / steps
     
-# Test the Robot class with a platform of more than two tiles
 platform = ['white', 'black', 'white', 'white']
 robot = Robot(platform)
 # Simulate for cautious robot
@@ -161,15 +148,12 @@ cautious_error_rate = robot.simulate(20, strategy='cautious')
 cautious_positions = robot.positions
 cautious_errors = robot.errors
 
-# Reset for adventurous robot
 robot = Robot(platform)
-
 # Simulate for adventurous robot
 adventurous_error_rate = robot.simulate(20, strategy='adventurous')
 adventurous_positions = robot.positions
 adventurous_errors = robot.errors
 
-# Plot the positions over time
 plt.figure(figsize=(10, 6))
 
 plt.subplot(2, 1, 1)
@@ -177,6 +161,7 @@ plt.plot(cautious_positions, label='Cautious Robot')
 plt.plot(adventurous_positions, label='Adventurous Robot', linestyle='--')
 plt.title('Robot Positions Over Time')
 plt.xticks(range(21))
+plt.yticks(range(4))
 plt.xlabel('Time Steps')
 plt.ylabel('Position')
 plt.legend()
