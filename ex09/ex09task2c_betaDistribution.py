@@ -94,12 +94,34 @@ class Robot:
         print(f"Total error rate: {error / steps}")
 
 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-print("Cautious strategy:")
+print("Cautious strategy: with action noise=0.0 and sensor noise=0.0")
 platform = ['white', 'black', 'white', 'white']
 robot = Robot(platform)
 robot.simulate(20, strategy='cautious',action_noise=0.0,sensor_noise=0.0) 
 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-print("Adventurous strategy:")
+print("Adventurous strategy with action noise=0.0 and sensor noise=0.0:")
 platform = ['white', 'black', 'white', 'white']
 robot = Robot(platform)
 robot.simulate(20, strategy='adventurous',action_noise=0.0,sensor_noise=0.0) 
+
+print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+print("Cautious strategy: with action noise=0.1 and sensor noise=0.1")
+platform = ['white', 'black', 'white', 'white']
+robot = Robot(platform)
+robot.simulate(20, strategy='cautious',action_noise=0.1,sensor_noise=0.1) 
+print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+print("Adventurous strategy with action noise=0.1 and sensor noise=0.1:")
+platform = ['white', 'black', 'white', 'white']
+robot = Robot(platform)
+robot.simulate(20, strategy='adventurous',action_noise=0.1,sensor_noise=0.1) 
+
+print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+print("Cautious strategy: with action noise=0.4 and sensor noise=0.4")
+platform = ['white', 'black', 'white', 'white']
+robot = Robot(platform)
+robot.simulate(20, strategy='cautious',action_noise=0.4,sensor_noise=0.4) 
+print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+print("Adventurous strategy with action noise=0.4 and sensor noise=0.4:")
+platform = ['white', 'black', 'white', 'white']
+robot = Robot(platform)
+robot.simulate(20, strategy='adventurous',action_noise=0.4,sensor_noise=0.4) 
