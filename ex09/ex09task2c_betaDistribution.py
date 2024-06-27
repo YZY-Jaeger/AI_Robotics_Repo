@@ -3,180 +3,103 @@ from collections import defaultdict
 from scipy.stats import beta
 
 class Robot:
-    def __init__(self, platform):
+    def __init__(self, platform,action_noise=0.0,sensor_noise=0.0):
         self.platform = platform
         self.position = 0  # Start on the left side of the platform
-        self.alpha = defaultdict(lambda: {'white': 1, 'black': 1})
-        self.beta = defaultdict(lambda: {'white': 1, 'black': 1})
-        self.read_color = "default"
-        self.noise_prob = 0
+        # Alpha is for 'black', Beta is for 'white'
+        self.alpha = defaultdict(int, {i: 1 for i in range(len(platform))})  # Pseudo-counts
+        self.beta = defaultdict(int, {i: 1 for i in range(len(platform))})  # Pseudo-counts
+        self.noise_action =action_noise
+        self.noise_sensor =sensor_noise
 
-    def move_left(self,noise=0.1):
-        randnum = 1
-        if self.position > 0 and randnum > noise:
-            self.position -= 1
-        elif self.position < len(self.platform) - 1 and randnum <= noise:
-            self.position += 1
-        else:
-            self.position = max(0, self.position) 
+    def move(self, direction):
+        intended_position = self.position + (1 if direction == 'right' else -1)
+        if random.random() <= self.noise_action:  # Random noise affects the movement
+            intended_position = self.position - (1 if direction == 'right' else -1)
+        # Ensure the robot stays within bounds
+        intended_position = max(0, min(intended_position, len(self.platform) - 1))
+        self.position = intended_position
         self.update_histogram()
 
-    def move_right(self,noise=0.1):
-        randnum = 1
-        if self.position < len(self.platform) - 1 and randnum > noise:
-            self.position += 1
-        elif self.position > 0 and randnum <= noise:
-            self.position -= 1
-        else:
-            self.position = min(len(self.platform) - 1, self.position)
-        self.update_histogram()
-
-    def sensing_color(self, noise=0.1):
-        perceived_color = self.platform[self.position]
-        if random.random() <= noise:
-            perceived_color = 'white' if perceived_color == 'black' else 'black'
-        self.read_color = perceived_color
-        return perceived_color
+    def sensing_color(self):
+        actual_color = self.platform[self.position]
+        if random.random() <= self.noise_sensor:  # Noise in color sensing
+            actual_color = 'white' if actual_color == 'black' else 'black'
+        return actual_color
 
     def update_histogram(self):
-        # Noise in perception
         perceived_color = self.sensing_color()
-
-        if perceived_color == 'white':
-            self.beta[self.position]['white'] += 1
+        if perceived_color == 'black':
+            self.alpha[self.position] += 1
         else:
-            self.alpha[self.position]['black'] += 1
-        
+            self.beta[self.position] += 1
         self.report_position()
 
     def report_position(self):
         print(f"The robot is on the {self.platform[self.position]} tile at position {self.position}.")
-        self.print_histogram(self.position)
-
-    def print_histogram(self, position):
-        alpha_histogram = self.alpha[position]
-        beta_histogram = self.beta[position]
-        print(f"Histogram for position {position}:")
-        for color in alpha_histogram:
-            print(f"  {color}: alpha = {alpha_histogram[color]}, beta = {beta_histogram[color]}")
+        print(f"Histogram for position {self.position}:")
+        print(f"  Black: alpha = {self.alpha[self.position]}")
+        print(f"  White: beta = {self.beta[self.position]}")
 
     def predict_color(self, position):
+        if position < 0 or position >= len(self.platform):
+            return 'unknown'
+        # Use beta distribution to predict the most likely color
+        prob_black = self.alpha[position] / (self.alpha[position] + self.beta[position])
+        return 'black' if prob_black > 0.5 else 'white'
 
-        
-        alpha_histogram = self.alpha[position]
-        beta_histogram = self.beta[position]
-        
-        mean_white = beta.mean(alpha_histogram['white'], beta_histogram['white'])
-        mean_black = beta.mean(alpha_histogram['black'], beta_histogram['black'])
-        
-        return 'white' if mean_white > mean_black else 'black'
+    def choose_action(self, strategy='cautious'):
+        left_position = max(0, self.position - 1)
+        right_position = min(len(self.platform) - 1, self.position + 1)
 
-    def beta_mean_variance(self, position):
-
-        
-        a = self.alpha[position]['black']
-        b = self.beta[position]['black']
-        mean = beta.mean(a, b)
-        variance = beta.var(a, b)
-        
-        last_measurement = 0 if self.read_color == 'white' else 1  # Assuming last color read affects decision
-        
-        return variance * abs(last_measurement - mean)
-
-    def choose_action_cautious(self):
-        left_position = self.position - 1
-        right_position = self.position + 1
-
+        # Calculate the predictive uncertainty
         delta_left = self.calculate_delta(left_position)
         delta_right = self.calculate_delta(right_position)
 
-        if delta_left < delta_right:
-            return 'left'
-        elif delta_right < delta_left:
-            return 'right'
+        if strategy == 'cautious':
+            return 'left' if delta_left < delta_right else 'right'
         else:
-            return random.choice(['left', 'right'])
-
-    def choose_action_adventurous(self):
-        left_position = self.position - 1
-        right_position = self.position + 1
-
-        delta_left = self.calculate_delta(left_position)
-        delta_right = self.calculate_delta(right_position)
-
-        if delta_left > delta_right:
-            return 'left'
-        elif delta_right > delta_left:
-            return 'right'
-        else:
-            return random.choice(['left', 'right'])
+            return 'left' if delta_left > delta_right else 'right'
 
     def calculate_delta(self, position):
-        if position < 0:
-            return 0
-        elif position >= len(self.platform):
-            return 0
+        if position < 0 or position >= len(self.platform):
+            return float('inf')  # High uncertainty for out-of-bounds positions
+        a = self.alpha[position]
+        b = self.beta[position]
+        variance = beta.var(a, b)
+        mean = beta.mean(a, b)
+        last_measurement = 0 if self.platform[self.position] == 'white' else 1
+        return variance * abs(last_measurement - mean)
 
-        #mean_white, variance_white, mean_black, variance_black = self.beta_mean_variance(position)
-        color = 0 if self.read_color == 'white' else 1
-        return self.beta_mean_variance(position)
-
-    def simulate(self, steps, strategy='cautious', noise_prob=0):
-        self.noise_prob = noise_prob
+    def simulate(self, steps, strategy='cautious',action_noise=0.0,sensor_noise=0.0):
         error = 0
-        self.sensing_color()
+        self.noise_action = action_noise
+        self.noise_sensor = sensor_noise
         for _ in range(steps):
             print("\n------------------------------------")
-
-            if strategy == 'cautious':
-                action = self.choose_action_cautious()
-            else:
-                action = self.choose_action_adventurous()
-
+            print("step: ", _)  
+            action = self.choose_action(strategy)
             next_position = self.position - 1 if action == 'left' else self.position + 1
             predicted_color = self.predict_color(next_position)
-            print(f"Predicted color for position {next_position}: {predicted_color}")
+            print(f"Predicted color for current position: {predicted_color}")
 
-            if action == 'left':
-                self.move_left()
-            else:
-                self.move_right()
+            self.move(action)
 
-            if predicted_color != self.platform[self.position]:
+            actual_color = self.platform[self.position]
+            if predicted_color != actual_color:
                 print("The prediction was incorrect.")
                 error += 1
 
         print(f"\nError: {error}  Steps: {steps}")
         print(f"Total error rate: {error / steps}")
 
-# Test the Robot class with a platform of more than two tiles
+print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+print("Cautious strategy:")
 platform = ['white', 'black', 'white', 'white']
 robot = Robot(platform)
-
-print("Cautious Robot Simulation - No Noise")
-robot.simulate(20, strategy='cautious', noise_prob=0)
-
-print("\n------------------------------------")
-
-print("\nCautious Robot Simulation - 10% Noise")
-robot.simulate(20, strategy='cautious', noise_prob=0.1)
-
-print("\n------------------------------------")
-
-print("\nCautious Robot Simulation - 40% Noise")
-robot.simulate(20, strategy='cautious', noise_prob=0.4)
-
-print("\n------------------------------------")
-
-print("\nAdventurous Robot Simulation - No Noise")
-robot.simulate(20, strategy='adventurous', noise_prob=0)
-
-print("\n------------------------------------")
-
-print("\nAdventurous Robot Simulation - 10% Noise")
-robot.simulate(20, strategy='adventurous', noise_prob=0.1)
-
-print("\n------------------------------------")
-
-print("\nAdventurous Robot Simulation - 40% Noise")
-robot.simulate(20, strategy='adventurous', noise_prob=0.4)
+robot.simulate(20, strategy='cautious',action_noise=0.0,sensor_noise=0.0) 
+print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+print("Adventurous strategy:")
+platform = ['white', 'black', 'white', 'white']
+robot = Robot(platform)
+robot.simulate(20, strategy='adventurous',action_noise=0.0,sensor_noise=0.0) 

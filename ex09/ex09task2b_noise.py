@@ -27,7 +27,7 @@ class Robot:
         randnum = random.random()
         if self.position < len(self.platform) - 1 and randnum > noise:
             self.position += 1
-        elif self.position > 0 and randnum <= noise:
+        elif self.position > 0 and randnum <= 0.1:
             self.position -= 1
         else:
             self.position = min(len(self.platform) - 1, self.position)
