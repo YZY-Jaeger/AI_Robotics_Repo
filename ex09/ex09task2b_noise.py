@@ -13,18 +13,24 @@ class Robot:
         self.errors = []
 
         
-    def move_left(self):
-        if self.position > 0 and random.random() > 0.1:
+    def move_left(self,noise=0.1):
+        randnum = random.random()
+        if self.position > 0 and randnum > noise:
             self.position -= 1
-        elif self.position < len(self.platform) - 1 and random.random() <= 0.1:
+        elif self.position < len(self.platform) - 1 and randnum <= noise:
             self.position += 1
+        else:
+            self.position = max(0, self.position) 
         self.update_histogram()
 
-    def move_right(self):
-        if self.position < len(self.platform) - 1 and random.random() > 0.1:
+    def move_right(self,noise=0.1):
+        randnum = random.random()
+        if self.position < len(self.platform) - 1 and randnum > noise:
             self.position += 1
-        elif self.position > 0 and random.random() <= 0.1:
+        elif self.position > 0 and randnum <= noise:
             self.position -= 1
+        else:
+            self.position = min(len(self.platform) - 1, self.position)
         self.update_histogram()
 
     def update_histogram(self):
@@ -62,8 +68,7 @@ class Robot:
         print(f"|{platform_representation}|")
 
     def predict_color(self, position):
-        if position < 0 or position >= len(self.platform):
-            return 'unknown'
+
         histogram = self.histograms[position]
         total = histogram['white'] + histogram['black']
         probability_white = histogram['white'] / total
@@ -71,8 +76,8 @@ class Robot:
         return 'white' if probability_white > probability_black else 'black'
 
     def choose_action_cautious(self):
-        left_position = self.position - 1
-        right_position = self.position + 1
+        left_position = max(0, self.position - 1)
+        right_position = min(len(self.platform) - 1, self.position + 1)
 
         delta_left = self.calculate_delta(left_position)
         delta_right = self.calculate_delta(right_position)
@@ -85,8 +90,8 @@ class Robot:
             return random.choice(['left', 'right'])
 
     def choose_action_adventurous(self):
-        left_position = self.position - 1
-        right_position = self.position + 1
+        left_position = max(0, self.position - 1)
+        right_position = min(len(self.platform) - 1, self.position + 1)
 
         delta_left = self.calculate_delta(left_position)
         delta_right = self.calculate_delta(right_position)
@@ -119,7 +124,7 @@ class Robot:
         self.sensing_color()
         for _ in range(steps):
             print("\n------------------------------------")
-
+            print(f"Step {_ + 1}")
             if strategy == 'cautious':
                 action = self.choose_action_cautious()
             else:

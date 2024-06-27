@@ -26,11 +26,20 @@ class Robot:
         print(f"The robot is on the {self.platform[self.position]} tile at position {self.position}.")
         self.print_histogram(self.position)
 
+    
     def print_histogram(self, position):
         histogram = self.histograms[position]
         print(f"Histogram for position {position}:")
         for color, count in histogram.items():
             print(f"  {color}: {count}")
+
+    def sensing_color(self, noise=0.1):
+        perceived_color = self.platform[self.position]
+        if random.random() <= noise:
+            perceived_color = 'white' if perceived_color == 'black' else 'black'
+        self.read_color = perceived_color
+
+        return perceived_color
 
     def predict_color(self, position):
         histogram = self.histograms[position]
